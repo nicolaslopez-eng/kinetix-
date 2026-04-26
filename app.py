@@ -9,7 +9,7 @@ st.subheader("Bienvenido. ¿En que te puedo ayudar el dia de hoy?")
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
 # Aquí pegas el prompt que creamos antes
-SYSTEM_PROMPT = """Actúa como Vitalis, experta en nutrición y fitness... (todo el prompt de antes)"""
+SYSTEM_PROMPT = """Actúa como kinetix, experta en nutrición y fitness... (todo el prompt de antes)"""
 
 # --- ESTO REEMPLAZA LA LÍNEA DEL MODELO ANTERIOR ---
 # Intentar encontrar un modelo válido automáticamente
