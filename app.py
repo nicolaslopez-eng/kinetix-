@@ -4,7 +4,7 @@ import google.generativeai as genai
 # Configuración de la página
 st.set_page_config(page_title="kinetix AI", page_icon="⚖️")
 st.title("⚖️ kinetix: Tu Coach de Salud")
-st.subheader("Bienvenido. ¿En que te pueo ayudar el dia de hoy?")
+st.subheader("Bienvenido. ¿En que te puedo ayudar el dia de hoy?")
 # Recuperar la API Key de los secretos de Streamlit
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
