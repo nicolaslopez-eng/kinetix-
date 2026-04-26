@@ -11,7 +11,7 @@ genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 # Aquí pegas el prompt que creamos antes
 SYSTEM_PROMPT = """Actúa como Vitalis, experta en nutrición y fitness... (todo el prompt de antes)"""
 
-model = genai.GenerativeModel('gemini-1.5-flash-latest', system_instruction=SYSTEM_PROMPT)
+model = genai.GenerativeModel('gemini-pro', system_instruction=SYSTEM_PROMPT)
 if "messages" not in st.session_state:st.session_state.messages = []
 
 # Mostrar el historial de chat
