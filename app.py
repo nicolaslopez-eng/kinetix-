@@ -1,71 +1,101 @@
 import streamlit as st
 import google.generativeai as genai
+from datetime import datetime
 
-# 1. Configuración Profesional de la Página
-st.set_page_config(
-    page_title="Kinetix AI",
-    page_icon="💪",
-    layout="wide" # Esto usa todo el ancho de la pantalla
-)
+# 1. CONFIGURACIÓN DE PÁGINA
+st.set_page_config(page_title="Kinetix AI Pro", page_icon="💪", layout="wide")
 
-# 2. Configuración de la API
+# 2. CONEXIÓN API
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 
-# 3. BARRA LATERAL (Panel de Control Pro)
+# 3. INICIALIZACIÓN DE ESTADO (MEMORIA DE CHATS)
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = {}  # Diccionario para guardar varios chats
+if "current_chat" not in st.session_state:
+    st.session_state.current_chat = "Chat Principal"
+
+# Crear el chat inicial si no existe
+if st.session_state.current_chat not in st.session_state.chat_history:
+    st.session_state.chat_history["Chat Principal"] = []
+
+# 4. BARRA LATERAL (SIDEBAR)
 with st.sidebar:
-    st.title("📊 Panel Kinetix")
-    st.write("Configura tus datos base:")
+    st.title("🚀 Kinetix Pro")
     
-    # Entradas de datos
-    peso = st.number_input("Peso actual (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.1)
-    altura = st.number_input("Altura (m)", min_value=1.0, max_value=2.5, value=1.70, step=0.01)
-    edad = st.number_input("Edad", min_value=5, max_value=100, value=25)
+    # SECCIÓN: GESTIÓN DE CHATS
+    st.subheader("💬 Mis Conversaciones")
     
-    # Cálculo automático de IMC en la barra lateral
-    imc = peso / (altura ** 2)
+    # Crear nuevo chat
+    nuevo_chat_nombre = st.text_input("Nuevo chat:", placeholder="Ej: Dieta Lunes", key="new_chat_input")
+    if st.button("➕ Crear Nuevo Chat"):
+        if nuevo_chat_nombre and nuevo_chat_nombre not in st.session_state.chat_history:
+            st.session_state.chat_history[nuevo_chat_nombre] = []
+            st.session_state.current_chat = nuevo_chat_nombre
+            st.rerun()
+
+    # Selector de chat actual
+    chat_seleccionado = st.selectbox("Seleccionar chat:", options=list(st.session_state.chat_history.keys()), index=list(st.session_state.chat_history.keys()).index(st.session_state.current_chat))
+    if chat_seleccionado != st.session_state.current_chat:
+        st.session_state.current_chat = chat_seleccionado
+        st.rerun()
+
+    # Eliminar chat
+    if st.button("🗑️ Eliminar Chat Actual") and len(st.session_state.chat_history) > 1:
+        del st.session_state.chat_history[st.session_state.current_chat]
+        st.session_state.current_chat = list(st.session_state.chat_history.keys())[0]
+        st.rerun()
+
     st.divider()
-    st.metric(label="Tu IMC", value=f"{imc:.1f}")
-    
-    if imc < 18.5: st.warning("Bajo peso")
-    elif 18.5 <= imc < 25: st.success("Rango Saludable")
-    elif 25 <= imc < 30: st.info("Sobrepeso")
-    else: st.error("Obesidad")
-    
-    st.info(f"Datos enviados a Kinetix para cálculos precisos.")
 
-# 4. PROMPT DE IDENTIDAD (El Cerebro)
-SYSTEM_PROMPT = f"""
-Eres Kinetix, una IA de élite experta en Nutrición y Ciencias del Deporte. 
-Tu usuario actual tiene estos datos: Peso {peso}kg, Altura {altura}m, Edad {edad} años (IMC: {imc:.1f}).
-Usa estos datos siempre que el usuario pregunte por calorías, dietas o ejercicios.
-Sé conciso, técnico y motivador. No des información de relleno.
-"""
+    # SECCIÓN: MÉTRICAS DE SALUD
+    st.subheader("📊 Perfil Biométrico")
+    peso = st.number_input("Peso (kg)", 30.0, 250.0, 75.0)
+    altura = st.number_input("Altura (m)", 1.0, 2.5, 1.75)
+    imc = peso / (altura ** 2)
+    st.metric("IMC", f"{imc:.1f}")
 
-# 5. Inicialización del Modelo
-# Usamos el buscador automático para evitar el error 404
+    # SECCIÓN: VISIÓN (SUBIR FOTOS)
+    st.subheader("📷 Analizador Visual")
+    archivo_foto = st.file_uploader("Sube foto de comida/etiqueta", type=["jpg", "png", "jpeg"])
+
+# 5. CONFIGURACIÓN DEL MODELO IA
+SYSTEM_PROMPT = f"""Eres Kinetix, una IA de élite. Usuario: {peso}kg, {altura}m (IMC: {imc:.1f}). 
+Tienes visión computacional. Si se sube una imagen, analízala con precisión técnica."""
+
 available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
 target_model = "models/gemini-1.5-flash" if "models/gemini-1.5-flash" in available_models else available_models[0]
 model = genai.GenerativeModel(target_model, system_instruction=SYSTEM_PROMPT)
 
-# 6. Lógica del Chat
-st.title("💪 Kinetix: Performance AI")
+# 6. PANTALLA PRINCIPAL DE CHAT
+st.title(f"💪 {st.session_state.current_chat}")
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-# Mostrar historial
-for message in st.session_state.messages:
+# Mostrar mensajes del chat seleccionado
+for message in st.session_state.chat_history[st.session_state.current_chat]:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Entrada de usuario
-if prompt := st.chat_input("¿Cuál es el plan de hoy?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
+# Lógica de envío de mensajes
+if prompt := st.chat_input("Escribe a Kinetix..."):
+    # Guardar mensaje del usuario
+    st.session_state.chat_history[st.session_state.current_chat].append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
+    # Generar respuesta de la IA
     with st.chat_message("assistant"):
-        # Enviamos el historial completo para que tenga memoria
-        response = model.generate_content(prompt)
-        st.markdown(response.text)
-        st.session_state.messages.append({"role": "assistant", "content": response.text})
+        with st.spinner("Kinetix pensando..."):
+            # Si hay foto, la enviamos junto al texto
+            if archivo_foto:
+                import PIL.Image
+                img = PIL.Image.open(archivo_foto)
+                response = model.generate_content([prompt, img])
+            else:
+                # Memoria: enviamos los últimos 10 mensajes del historial actual
+                response = model.generate_content(st.session_state.chat_history[st.session_state.current_chat][-10:])
+            
+            st.markdown(response.text)
+            st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": response.text})
+
+# Notificación de foto cargada
+if archivo_foto:
+    st.sidebar.success("📸 Imagen lista para análisis. ¡Pregúntale a Kinetix sobre ella!")
