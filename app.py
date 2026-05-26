@@ -80,27 +80,37 @@ for message in st.session_state.chat_history[st.session_state.current_chat]:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Lógica de envío de mensajes
+# Entrada de usuario
 if prompt := st.chat_input("Escribe a Kinetix..."):
     # Guardar mensaje del usuario
     st.session_state.chat_history[st.session_state.current_chat].append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Generar respuesta de la IA
+    # Generar respuesta de la IA con ESCUDO ANTIERRORES
     with st.chat_message("assistant"):
         with st.spinner("Kinetix pensando..."):
-            # Si hay foto, la enviamos junto al texto
-            if archivo_foto:
-                import PIL.Image
-                img = PIL.Image.open(archivo_foto)
-                response = model.generate_content([prompt, img])
-            else:
-                # Memoria: enviamos los últimos 10 mensajes del historial actual
-                response = model.generate_content(st.session_state.chat_history[st.session_state.current_chat][-10:])
-            
-            st.markdown(response.text)
-            st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": response.text})
+            try:
+                # Si hay foto, la enviamos junto al texto
+                if archivo_foto:
+                    import PIL.Image
+                    img = PIL.Image.open(archivo_foto)
+                    response = model.generate_content([prompt, img])
+                else:
+                    # Enviamos los últimos mensajes como memoria
+                    response = model.generate_content(st.session_state.chat_history[st.session_state.current_chat][-10:])
+                
+                # Verificar si la respuesta fue bloqueada por filtros de Google
+                if response.prompt_feedback.block_reason:
+                    texto_respuesta = "⚠️ Kinetix no puede responder a esto por políticas de seguridad o contenido fuera de contexto. Por favor, mantengamos el enfoque en tu salud y entrenamiento."
+                elif not response.text:
+                    texto_respuesta = "⚠️ Recibí una respuesta vacía. Por favor, reformula tu pregunta sobre nutrición o deporte."
+                else:
+                    texto_respuesta = response.text
+                    st.markdown(texto_respuesta)
+                st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": texto_respuesta})
+
+
 
 # Notificación de foto cargada
 if archivo_foto:
