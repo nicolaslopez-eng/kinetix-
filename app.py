@@ -108,9 +108,9 @@ if prompt := st.chat_input("Escribe a Kinetix..."):
                 else:
                     texto_respuesta = response.text
                     st.markdown(texto_respuesta)
-                st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": texto_respuesta})
+              st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": texto_respuesta})
 
-except Exception as e:
+              except Exception as e:
 
 # Si todo lo demás falla, atrapamos el error aquí para que la app no se caiga
 error_msg = str(e)
