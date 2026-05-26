@@ -111,11 +111,12 @@ if prompt := st.chat_input("Escribe a Kinetix..."):
                 st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": texto_respuesta})
 
 except Exception as e:
+
 # Si todo lo demás falla, atrapamos el error aquí para que la app no se caiga
 error_msg = str(e)
      if "429" in error_msg:
         st.error("⏳ ¡Un segundo! Excedimos el límite de mensajes por minuto de la cuenta gratuita. Espera 10 segundos y vuelve a intentar.")
-else:
+               else:
         st.error("🔒 Kinetix detectó una consulta fuera de su protocolo o hubo un problema con el formato. Por favor, intenta preguntar algo relacionado con fitness, dietas o salud.")
 
 # Notificación de foto cargada
