@@ -94,7 +94,7 @@ if prompt := st.chat_input("Escribe a Kinetix..."):
                 # Si hay foto, la enviamos junto al texto
              if archivo_foto:
               import PIL.Image
-                    img = PIL.Image.open(archivo_foto)
+            img = PIL.Image.open(archivo_foto)
                     response = model.generate_content([prompt, img])
             else:
                     # Enviamos los últimos mensajes como memoria
