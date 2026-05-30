@@ -92,32 +92,32 @@ if prompt := st.chat_input("Escribe a Kinetix..."):
         with st.spinner("Kinetix pensando..."):
             try:
                 # Si hay foto, la enviamos junto al texto
-             if archivo_foto:
-              import PIL.Image
-            img = PIL.Image.open(archivo_foto)
+                if archivo_foto:
+                    import PIL.Image
+                    img = PIL.Image.open(archivo_foto)
                     response = model.generate_content([prompt, img])
-            else:
+                else:
                     # Enviamos los últimos mensajes como memoria
                     response = model.generate_content(st.session_state.chat_history[st.session_state.current_chat][-10:])
                 
                 # Verificar si la respuesta fue bloqueada por filtros de Google
-            if response.prompt_feedback.block_reason:
+                if hasattr(response, 'prompt_feedback') and response.prompt_feedback.block_reason:
                     texto_respuesta = "⚠️ Kinetix no puede responder a esto por políticas de seguridad o contenido fuera de contexto. Por favor, mantengamos el enfoque en tu salud y entrenamiento."
-            elif not response.text:
+                elif not response.text:
                     texto_respuesta = "⚠️ Recibí una respuesta vacía. Por favor, reformula tu pregunta sobre nutrición o deporte."
-            else:
+                else:
                     texto_respuesta = response.text
-                    st.markdown(texto_respuesta)
-            st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": texto_respuesta})
+                
+                st.markdown(texto_respuesta)
+                st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": texto_respuesta})
 
             except Exception as e:
-
-# Si todo lo demás falla, atrapamos el error aquí para que la app no se caiga
-error_msg = str(e)
-     if "429" in error_msg:
-        st.error("⏳ ¡Un segundo! Excedimos el límite de mensajes por minuto de la cuenta gratuita. Espera 10 segundos y vuelve a intentar.")
-               else:
-        st.error("🔒 Kinetix detectó una consulta fuera de su protocolo o hubo un problema con el formato. Por favor, intenta preguntar algo relacionado con fitness, dietas o salud.")
+                # Si todo lo demás falla, atrapamos el error aquí
+                error_msg = str(e)
+                if "429" in error_msg:
+                    st.error("⏳ ¡Un segundo! Excedimos el límite de mensajes por minuto. Espera 10 segundos y vuelve a intentar.")
+                else:
+                    st.error("🔒 Kinetix detectó una consulta fuera de su protocolo o hubo un problema. Por favor, intenta preguntar algo relacionado con fitness o salud.")
 
 # Notificación de foto cargada
 if archivo_foto:
