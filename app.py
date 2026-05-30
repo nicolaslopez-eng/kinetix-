@@ -92,8 +92,8 @@ if prompt := st.chat_input("Escribe a Kinetix..."):
         with st.spinner("Kinetix pensando..."):
             try:
                 # Si hay foto, la enviamos junto al texto
-            if archivo_foto:
-            import PIL.Image
+             if archivo_foto:
+              import PIL.Image
                     img = PIL.Image.open(archivo_foto)
                     response = model.generate_content([prompt, img])
             else:
