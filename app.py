@@ -92,23 +92,23 @@ if prompt := st.chat_input("Escribe a Kinetix..."):
         with st.spinner("Kinetix pensando..."):
             try:
                 # Si hay foto, la enviamos junto al texto
-                if archivo_foto:
-                    import PIL.Image
+            if archivo_foto:
+            import PIL.Image
                     img = PIL.Image.open(archivo_foto)
                     response = model.generate_content([prompt, img])
-                else:
+            else:
                     # Enviamos los últimos mensajes como memoria
                     response = model.generate_content(st.session_state.chat_history[st.session_state.current_chat][-10:])
                 
                 # Verificar si la respuesta fue bloqueada por filtros de Google
-                if response.prompt_feedback.block_reason:
+            if response.prompt_feedback.block_reason:
                     texto_respuesta = "⚠️ Kinetix no puede responder a esto por políticas de seguridad o contenido fuera de contexto. Por favor, mantengamos el enfoque en tu salud y entrenamiento."
-                elif not response.text:
+            elif not response.text:
                     texto_respuesta = "⚠️ Recibí una respuesta vacía. Por favor, reformula tu pregunta sobre nutrición o deporte."
-                else:
+            else:
                     texto_respuesta = response.text
                     st.markdown(texto_respuesta)
-              st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": texto_respuesta})
+            st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": texto_respuesta})
 
             except Exception as e:
 
