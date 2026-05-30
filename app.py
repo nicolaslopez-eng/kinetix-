@@ -14,8 +14,8 @@ try:
 except Exception:
     st.error("🔑 Error crítico: No se encontraron las llaves en los Secrets de Streamlit. Revisa la configuración de tu panel.")
 
-# URL del modelo de imagen gratuito en Hugging Face
-HF_API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
+# URL del modelo de imagen gratuito en Hugging Face (Cambiamos a SDXL por estabilidad)
+HF_API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
 headers = {"Authorization": f"Bearer {HF_API_KEY}"}
 
 def generar_imagen_gratis(prompt_texto):
