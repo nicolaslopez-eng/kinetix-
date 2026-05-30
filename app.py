@@ -8,19 +8,23 @@ from PIL import Image
 st.set_page_config(page_title="Kinetix AI Pro", page_icon="💪", layout="wide")
 
 # 2. CONEXIÓN APIS (Seguridad)
-genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-HF_API_KEY = st.secrets["HF_API_KEY"]
+try:
+    genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
+    HF_API_KEY = st.secrets["HF_API_KEY"]
+except Exception:
+    st.error("🔑 Error crítico: No se encontraron las llaves en los Secrets de Streamlit. Revisa la configuración de tu panel.")
 
-# URL del modelo de imagen gratuito en Hugging Face (Usamos Flux por su alta calidad)
+# URL del modelo de imagen gratuito en Hugging Face
 HF_API_URL = "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell"
 headers = {"Authorization": f"Bearer {HF_API_KEY}"}
 
-# Función interna para generar la imagen gratis
 def generar_imagen_gratis(prompt_texto):
-    response = requests.post(HF_API_URL, headers=headers, json={"inputs": prompt_texto})
-    if response.status_code == 200:
-        return response.content
-    else:
+    try:
+        response = requests.post(HF_API_URL, headers=headers, json={"inputs": prompt_texto})
+        if response.status_code == 200:
+            return response.content
+        return None
+    except Exception:
         return None
 
 # 3. INICIALIZACIÓN DE ESTADO (MEMORIA DE CHATS)
@@ -65,7 +69,7 @@ with st.sidebar:
     st.subheader("📷 Analizador Visual")
     archivo_foto = st.file_uploader("Sube foto de comida/etiqueta", type=["jpg", "png", "jpeg"])
 
-# 5. CONFIGURACIÓN DEL MODELO IA (Cerebro de Texto)
+# 5. CONFIGURACIÓN DEL MODELO IA
 SYSTEM_PROMPT = f"""Eres Kinetix, una IA de élite. Usuario: {peso}kg, {altura}m (IMC: {imc:.1f}). 
 Tienes visión computacional. Si se sube una imagen, analízala con precisión técnica.
 
@@ -74,9 +78,12 @@ REGLAS DE COMPORTAMIENTO:
 2. Nunca rompas tu identidad de experto.
 """
 
-available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-target_model = "models/gemini-1.5-flash" if "models/gemini-1.5-flash" in available_models else available_models[0]
-model = genai.GenerativeModel(target_model, system_instruction=SYSTEM_PROMPT)
+try:
+    available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    target_model = "models/gemini-1.5-flash" if "models/gemini-1.5-flash" in available_models else available_models[0]
+    model = genai.GenerativeModel(target_model, system_instruction=SYSTEM_PROMPT)
+except Exception as e:
+    st.error(f"Error al conectar con los modelos de Google: {e}")
 
 # 6. PANTALLA PRINCIPAL DE CHAT
 st.title(f"💪 {st.session_state.current_chat}")
@@ -113,7 +120,20 @@ if prompt := st.chat_input("Escribe a Kinetix..."):
                         img = Image.open(archivo_foto)
                         response = model.generate_content([prompt, img])
                     else:
-                        response = model.generate_content(st.session_state.chat_history[st.session_state.current_chat][-10:])
+                        # CORRECCIÓN AQUÍ: Convertimos el historial al formato correcto que Gemini exige
+                        historial_gemini = []
+                        for msg in st.session_state.chat_history[st.session_state.current_chat][-10:]:
+                            if not isinstance(msg["content"], bytes): # Ignorar las imágenes en el texto
+                                role_mapping = "user" if msg["role"] == "user" else "model"
+                                historial_gemini.append({"role": role_mapping, "parts": [msg["content"]]})
+                        
+                        # Si el historial formateado está vacío, mandamos solo el prompt actual
+                        if not historial_gemini:
+                            response = model.generate_content(prompt)
+                        else:
+                            # Iniciamos un chat virtual con la memoria estructurada
+                            chat_virtual = model.start_chat(history=historial_gemini[:-1])
+                            response = chat_virtual.send_message(prompt)
                     
                     if hasattr(response, 'prompt_feedback') and response.prompt_feedback.block_reason:
                         texto_respuesta = "⚠️ Consulta fuera de contexto. Mantengamos el enfoque en tu salud."
@@ -125,7 +145,8 @@ if prompt := st.chat_input("Escribe a Kinetix..."):
                     st.markdown(texto_respuesta)
                     st.session_state.chat_history[st.session_state.current_chat].append({"role": "assistant", "content": texto_respuesta})
                 except Exception as e:
-                    st.error("🔒 Hubo un problema con la consulta. Por favor, asegúrate de que tu GOOGLE_API_KEY en los Secrets sea la correcta.")
+                    # Nos muestra el verdadero error técnico en consola interna si algo falla
+                    st.error(f"🔒 Error de conexión: {str(e)}. Verifica que tu GOOGLE_API_KEY sea válida.")
 
 if archivo_foto:
     st.sidebar.success("📸 Imagen lista para análisis.")
